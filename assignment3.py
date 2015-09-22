@@ -13,17 +13,15 @@ def downloadData(url):
 
 def processData(content):
     """Processing the content of the CSV file."""
-    dictionary = csv.reader(content)
+    csvData = csv.reader(content)
     dateFormat = "%Y-%m-%d %H:%M:%S"
     hits = 0
     imgHits = 0 
     safari = chrome = firefox = msie = 0
 
-    times = {} 
-    for i in range(0, 24):
-        times[i] = 0
+    times = {i:0 for i in range(0, 24)}
 
-    for row in dictionary:
+    for row in csvData:
         result = {"path":row[0], "date":row[1], "browser": row[2], "status": row[3], "size": row[4]}
 
         date = datetime.datetime.strptime(result["date"], dateFormat)
@@ -46,19 +44,17 @@ def processData(content):
             msie += 1
 
     imageRequest = (float(imgHits) / hits) * 100
-    browsers = {"Safari": safari, "Chrome":chrome, "Firefox": firefox, "MSIE":msie}
+    browsers = {"Safari": safari, "Chrome": chrome, "Firefox": firefox, "MSIE": msie}
 
     print "Results are shown below:"
     print "Image requests account for {0:0.1f}% of all requests.".format(imageRequest)
     print "The most popular browser is %s." % (max(browsers.iteritems(), key=operator.itemgetter(1))[0])
 
-    tempTimes = times
+    sorted_times = sorted(times.items(), key=operator.itemgetter(1))
+    sorted_times.reverse()
+    for t in sorted_times:
+        print "Hour %02d has %s hits." % (t[0], t[1])
 
-    for i in range(0, 24):
-        id = (max(tempTimes.iteritems(), key=operator.itemgetter(1))[0])
-        print "Hour %02d has %s hits." % (id, tempTimes[id])
-        tempTimes.pop(id)
-    
 
 def main():
     """Main function that runs when programm is called."""
@@ -71,7 +67,7 @@ def main():
             csvData = downloadData(args.url)
             processData(csvData)       
 
-        except:
+        except urllib2.URLError as e:
             print "This URL is invalid."
     else:
         print "Please make sure to insert a URL."
